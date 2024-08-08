@@ -1,26 +1,19 @@
 
 npx expo install react-native-screens react-native-safe-area-context
-
 npm install @react-navigation/native
-
 npm install @react-navigation/native @react-navigation/stack
 npm install react-native-screens react-native-safe-area-context
 npx expo install react-native-gesture-handler
 npm install @react-navigation/stack
-npx expo install @react-native-masked-view/masked-view
 npm install @react-navigation/native-stack
 npm install @react-navigation/drawer
 npm install @react-navigation/bottom-tabs
 npm i @ui-kitten/eva-icons react-native-svg
-npm un -g react-native-cli && npm i -g @react-native-community/cli
 npm i @ui-kitten/components @eva-design/eva react-native-svg
 npx expo install react-native-gesture-handler
-npm install @react-native-picker/picker --save
-
 npx expo install react-native-reanimated
 npm install react-native-dropdown-select-list
 npm i react-native-webview@11.25.0
-npm install react-native-popover-view 
 npm install react-native-calendars 
 npm install lodash 
 npm i react-native-keyboard-aware-scroll-view
