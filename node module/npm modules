@@ -1,34 +1,3 @@
-npx expo install react-native-screens react-native-safe-area-context
-
-npm install @react-navigation/native
-
-npm install @react-navigation/native
-
-npm install @react-navigation/native @react-navigation/stack
-npm install react-native-screens react-native-safe-area-context
-npx expo install react-native-gesture-handler
-npm install @react-navigation/stack
-npx expo install @react-native-masked-view/masked-view
-npm install @react-navigation/native-stack
-npm install @react-navigation/drawer
-npx expo install react-native-gesture-handler react-native-reanimated
-npm install @react-navigation/bottom-tabs
-npx expo install expo-document-picker
-npx expo install expo-image-picker
-npm i @ui-kitten/eva-icons react-native-svg
-npm un -g react-native-cli && npm i -g @react-native-community/cli
-npm i @ui-kitten/components @eva-design/eva react-native-svg
-npx expo install @shopify/flash-list react-native-gesture-handler react-native-reanimated
-npm install --save @shopify/flash-list react-native-gesture-handler react-native-reanimated
-npm install --save @howljs/calendar-kit
-npx expo install react-native-gesture-handler
-npm install @react-native-picker/picker --save
-npx expo install expo-camera
-
-npx expo install react-native-reanimated
-npm install react-native-dropdown-select-list
-npx expo install expo-image
-npm i react-native-webview@11.25.0
 
 npx expo install react-native-screens react-native-safe-area-context
 
