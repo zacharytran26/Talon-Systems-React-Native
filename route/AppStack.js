@@ -4,6 +4,7 @@ import {
   StatusBar,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import {
   createDrawerNavigator,
@@ -19,8 +20,6 @@ import {
 } from "@ui-kitten/components";
 import * as eva from "@eva-design/eva";
 import { EvaIconsPack } from "@ui-kitten/eva-icons";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
 
 // Import your screens
 import EmailList from "../screens/EmailDetailsScreen";
@@ -44,27 +43,18 @@ import PendingAuths from "../screens/PendingAuths";
 import Approve from "../screens/ApprovalScreen";
 import Times from "../screens/TimesScreen";
 import FIFScreen from "../screens/FIFScreen";
-import QualiScreen from "../screens/QualificationScreen";
-
+import LogScreen from "../screens/LogScreen";
+import DisplayImage from "../screens/ImageScreen";
+import Activity from "../screens/ActivityScreen";
+import InstructorActivity from "../screens/InstructorActivity";
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 
 function CustomDrawerContent(props) {
   const theme = useTheme();
-  const profileImage = require("../assets/person-icon.png");
-  const [image, setImage] = useState(null);
+  const { authUser } = useAuth();
+  const uric = `https://apps5.talonsystems.com/tseta/php/upload/view.php?imgRes=10&viewPers=${authUser.currpersid}&rorwwelrw=rw&curuserid=${authUser.currpersid}&id=${authUser.sysdocid}&svr=TS5P&s=${authUser.sessionid}&c=eta0000`;
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
   return (
     <DrawerContentScrollView
       {...props}
@@ -74,12 +64,9 @@ function CustomDrawerContent(props) {
         <TouchableOpacity
           appearance="ghost"
           style={styles.profileSection}
-          onPress={pickImage}
+          onPress={() => console.log("add upload image here ")}
         >
-          <Avatar
-            source={image ? { uri: image } : profileImage}
-            style={styles.profileAvatar}
-          />
+          <Avatar source={{ uri: uric }} style={styles.profileAvatar} />
         </TouchableOpacity>
         <DrawerItem
           label="Instructors"
@@ -98,6 +85,14 @@ function CustomDrawerContent(props) {
           onPress={() => props.navigation.navigate("FIF")}
         />
         <DrawerItem
+          label="Settings"
+          onPress={() => props.navigation.navigate("Settings")}
+        />
+        <DrawerItem
+          label="Log"
+          onPress={() => props.navigation.navigate("Log")}
+        />
+        <DrawerItem
           label="Logout"
           onPress={() => props.navigation.navigate("Logout")}
         />
@@ -109,7 +104,7 @@ function CustomDrawerContent(props) {
 function MainDrawer() {
   return (
     <Drawer.Navigator
-      initialRouteName="Home"
+      initialRouteName="dHome"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={({ navigation }) => ({
         headerTitle: () => <LogoTitle navigation={navigation} />,
@@ -117,11 +112,13 @@ function MainDrawer() {
         headerBackTitleVisible: false,
       })}
     >
-      <Drawer.Screen name="Home" component={HomeScreen} />
+      <Drawer.Screen name="dHome" component={HomeScreen} />
       <Drawer.Screen name="InstructorScreen" component={InstructorsScreen} />
       <Drawer.Screen name="StudentScreen" component={StudentsScreen} />
       <Drawer.Screen name="PendingAuth" component={PendingAuths} />
+      <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen name="FIF" component={FIFScreen} />
+      <Drawer.Screen name="Log" component={LogScreen} />
       <Drawer.Screen name="Logout" component={LogoutScreen} />
     </Drawer.Navigator>
   );
@@ -151,49 +148,46 @@ export default function AppContent() {
   return (
     <>
       <IconRegistry icons={EvaIconsPack} />
-      <ApplicationProvider {...eva} theme={eva.light}>
-        <StatusBar />
-        <Stack.Navigator
-          screenOptions={({ navigation }) => ({
-            headerTitle: () => <LogoTitle navigation={navigation} />,
-            headerStyle: { height: 120 },
-            headerBackTitleVisible: false,
-          })}
-        >
-          <Stack.Screen
-            name="Drawer"
-            component={MainDrawer}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{ title: "My home" }}
-          />
-          <Stack.Screen name="Message" component={MessagesScreen} />
-          <Stack.Screen name="InstructorScreen" component={InstructorsScreen} />
-          <Stack.Screen name="CurrencyScreen" component={CurrencyScreen} />
-          <Stack.Screen name="StudentScreen" component={StudentsScreen} />
-          <Stack.Screen
-            name="InstructorDetailScreen"
-            component={InstructorList}
-          />
-          <Stack.Screen name="ReplyScreen" component={ReplyScreen} />
-          <Stack.Screen name="StudentDetailScreen" component={StudentList} />
-          <Stack.Screen name="Emails" component={EmailList} />
-          <Stack.Screen name="Logout" component={LogoutScreen} />
-          <Stack.Screen name="NewMessage" component={NewMessage} />
-          <Stack.Screen name="StudentCourse" component={StudentCourse} />
-          <Stack.Screen name="StudentMap" component={StudentMap} />
-          <Stack.Screen
-            name="StudentMapDetails"
-            component={StudentMapDetails}
-          />
-          <Stack.Screen name="LineItem" component={LineItem} />
-          <Stack.Screen name="Auth" component={Approve} />
-          <Stack.Screen name="Times" component={Times} />
-        </Stack.Navigator>
-      </ApplicationProvider>
+      <StatusBar />
+      <Stack.Navigator
+        screenOptions={({ navigation }) => ({
+          headerTitle: () => <LogoTitle navigation={navigation} />,
+          headerStyle: { height: 120 },
+          headerBackTitleVisible: false,
+        })}
+      >
+        <Stack.Screen
+          name="Drawer"
+          component={MainDrawer}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="sHome" component={HomeScreen} />
+        <Stack.Screen name="Message" component={MessagesScreen} />
+        <Stack.Screen name="InstructorScreen" component={InstructorsScreen} />
+        <Stack.Screen name="CurrencyScreen" component={CurrencyScreen} />
+        <Stack.Screen name="StudentScreen" component={StudentsScreen} />
+        <Stack.Screen
+          name="InstructorDetailScreen"
+          component={InstructorList}
+        />
+        <Stack.Screen name="ReplyScreen" component={ReplyScreen} />
+        <Stack.Screen name="StudentDetailScreen" component={StudentList} />
+        <Stack.Screen name="Emails" component={EmailList} />
+        <Stack.Screen name="Logout" component={LogoutScreen} />
+        <Stack.Screen name="NewMessage" component={NewMessage} />
+        <Stack.Screen name="StudentCourse" component={StudentCourse} />
+        <Stack.Screen name="StudentMap" component={StudentMap} />
+        <Stack.Screen name="StudentMapDetails" component={StudentMapDetails} />
+        <Stack.Screen name="LineItem" component={LineItem} />
+        <Stack.Screen name="Auth" component={Approve} />
+        <Stack.Screen name="Times" component={Times} />
+        <Stack.Screen name="Image" component={DisplayImage} />
+        <Stack.Screen name="Activity" component={Activity} />
+        <Stack.Screen
+          name="InstructorActivity"
+          component={InstructorActivity}
+        />
+      </Stack.Navigator>
     </>
   );
 }
@@ -236,3 +230,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
