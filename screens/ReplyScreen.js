@@ -46,8 +46,6 @@ export const ReplyScreen = ({ navigation }) => {
         },
       }
     );
-    const result = await response;
-    console.log(result);
   };
 
   const handleRefresh = () => {
@@ -87,6 +85,7 @@ export const ReplyScreen = ({ navigation }) => {
               onPress={() => {
                 ReplyEmails();
                 navigation.goBack();
+                Alert.alert("Message Sent");
               }}
             >
               Send
@@ -110,6 +109,7 @@ export const ReplyScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F7F9FC",
   },
   safeArea: {
     flex: 1,

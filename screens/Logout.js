@@ -8,7 +8,6 @@ export default function LogoutScreen({ navigation }) {
   const logOut = () => {
     setIsLoggedIn(false);
     setAuthUser(null);
-    console.log("logout...");
   };
 
   return (
@@ -37,8 +36,8 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "80%",
-    backgroundColor: "#3366FF",
-    borderColor: "#3366FF",
+    backgroundColor: "#f20a0a",
+    borderColor: "#f20a0a",
     borderRadius: 25,
   },
 });
