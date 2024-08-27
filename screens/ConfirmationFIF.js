@@ -15,10 +15,10 @@ const useInputState = (initialValue = "") => {
   return { value, onChangeText: setValue, reset: () => setValue(initialValue) };
 };
 
-const Approve = ({ navigation, route }) => {
-  const { ids } = route.params;
+const ConfirmFIF = ({ navigation, route }) => {
+  const { fifdata } = route.params;
   const hoursInputState = useInputState("");
-  const commentInputState = useInputState("");
+  const confirmInputState = useInputState("");
   const pinInputState = useInputState("");
   const { authUser } = useAuth();
   const [submitToScheduling, setSubmitToScheduling] = useState(false);
@@ -30,11 +30,11 @@ const Approve = ({ navigation, route }) => {
 
   const HandleAuthorization = async (approved) => {
     const hours = hoursInputState.value;
-    const comment = commentInputState.value;
+    const confirmcode = confirmInputState.value;
     const pin = pinInputState.value;
 
     const response = await fetch(
-      `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=authrequest&etamobilepro=1&nocache=n&schactid=${ids.scheduleid}&requestid=${ids.requestid}&approval=${approved}&pinnum=${pin}&comment=${comment}&submittoscheduling=${submitToScheduling}&persid=${authUser.currpersid}`,
+      `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=confirmfif&etamobilepro=1&nocache=n&ccode=${confirmcode}&approval=${approved}&pinnum=${pin}&persid=${authUser.currpersid}`,
       {
         method: "POST",
         headers: {
@@ -57,6 +57,15 @@ const Approve = ({ navigation, route }) => {
     Alert.alert(item.msg);
   };
 
+  const handleConfirm = () => {
+    if (confirmInputState.value === fifdata.CONFIRM_CODE) {
+      Alert.alert("Success", "Confirmation code is correct.");
+      // Proceed with the confirmation logic here
+    } else {
+      Alert.alert("Error", "Confirmation code is incorrect.");
+    }
+  };
+
   return (
     <Layout style={styles.container}>
       <SafeAreaView>
@@ -64,19 +73,10 @@ const Approve = ({ navigation, route }) => {
           <Input
             multiline={true}
             textStyle={styles.textArea}
-            placeholder="Hours Approved"
+            placeholder="Confirmation Code"
             returnKeyType={Platform.OS === "ios" ? "done" : "next"}
             blurOnSubmit={true}
-            {...hoursInputState}
-            style={styles.input}
-          />
-          <Input
-            multiline={true}
-            textStyle={styles.textArea}
-            placeholder="Comment"
-            returnKeyType={Platform.OS === "ios" ? "done" : "next"}
-            blurOnSubmit={true}
-            {...commentInputState}
+            {...confirmInputState}
             style={styles.input}
           />
           <Input
@@ -89,18 +89,12 @@ const Approve = ({ navigation, route }) => {
             style={styles.input}
             accessoryRight={(props) => <Icon {...props} name="lock-outline" />}
           />
-          <View style={styles.toggleContainer}>
-            <Text style={styles.toggleText}>Submit to Scheduling?</Text>
-            <Toggle
-              checked={submitToScheduling}
-              onChange={handleToggleChange}
-            />
-          </View>
           <View style={styles.buttonContainer}>
             <Button
               style={styles.approveButton}
               status="success"
               onPress={() => {
+                handleConfirm();
                 HandleAuthorization("approve");
                 navigation.goBack();
               }}
@@ -193,4 +187,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Approve;
+export default ConfirmFIF;

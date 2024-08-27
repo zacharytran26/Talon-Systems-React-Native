@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Modal,
@@ -19,50 +19,58 @@ const TimelineCalendarScreen = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const navigation = useNavigation();
 
-  const fetchCalData = async (fromDate, toDate) => {
-    try {
-      const response = await fetch(
-        `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=getactivities&etamobilepro=1&nocache=n&persid=${authUser.currpersid}&calstart=${fromDate}&calend=${toDate}`
-      );
-
-      const textData = await response.text();
-      console.log(textData);
-      let jsonData;
-
+  const fetchCalData = useCallback(
+    async (fromDate, toDate) => {
       try {
-        jsonData = JSON.parse(textData);
-      } catch (parseError) {
-        const jsonStart = textData.indexOf("{");
-        const jsonEnd = textData.lastIndexOf("}") + 1;
-        const jsonString = textData.substring(jsonStart, jsonEnd);
-        jsonData = JSON.parse(jsonString);
+        const response = await fetch(
+          `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=getactivities&etamobilepro=1&nocache=n&persid=${authUser.currpersid}&calstart=${fromDate}&calend=${toDate}`
+        );
+
+        const textData = await response.text();
+        console.log(textData);
+        let jsonData;
+
+        try {
+          jsonData = JSON.parse(textData);
+        } catch (parseError) {
+          const jsonStart = textData.indexOf("{");
+          const jsonEnd = textData.lastIndexOf("}") + 1;
+          const jsonString = textData.substring(jsonStart, jsonEnd);
+          jsonData = JSON.parse(jsonString);
+        }
+
+        const fetchedEvents = jsonData.activities.map((item) => ({
+          id: Math.random().toString(36).slice(2, 10),
+          start: new Date(item.start),
+          end: new Date(item.end),
+          //title: `${item.subtype} with ${item.s1} (Unit: ${item.u1})\nInstructor: ${item.pic}\nStatus: ${item.status}`,
+          title: "123",
+          summary: item.summary,
+          color: item.color,
+          ...item,
+        }));
+
+        return fetchedEvents;
+      } catch (error) {
+        console.error("Fetching or parsing error:", error);
+        return [];
       }
+    },
+    [authUser]
+  );
 
-      const fetchedEvents = jsonData.activities.map((item) => ({
-        id: Math.random().toString(36).slice(2, 10),
-        start: new Date(item.start),
-        end: new Date(item.end),
-        title: item.title,
-        summary: item.summary,
-        color: "#A3C7D6", // Replace with your desired event color
-      }));
-
-      return fetchedEvents;
-    } catch (error) {
-      console.error("Fetching or parsing error:", error);
-      return [];
-    }
-  };
-
-  const loadEventsForDateRange = async (fromDate, toDate) => {
-    setIsLoading(true);
-    const events = await fetchCalData(
-      fromDate.toISOString().split("T")[0],
-      toDate.toISOString().split("T")[0]
-    );
-    setEvents(events);
-    setIsLoading(false);
-  };
+  const loadEventsForDateRange = useCallback(
+    async (fromDate, toDate) => {
+      setIsLoading(true);
+      const events = await fetchCalData(
+        fromDate.toISOString().split("T")[0],
+        toDate.toISOString().split("T")[0]
+      );
+      setEvents(events);
+      setIsLoading(false);
+    },
+    [fetchCalData]
+  );
 
   useEffect(() => {
     const numOfDays = 7;
@@ -71,68 +79,118 @@ const TimelineCalendarScreen = () => {
     toDate.setDate(fromDate.getDate() + numOfDays);
 
     loadEventsForDateRange(fromDate, toDate);
-  }, [authUser]);
+  }, [authUser, loadEventsForDateRange]);
 
-  const handleLongPress = (event) => {
+  const handlePress = useCallback(
+    (event) => {
+      navigation.navigate("Activity", {
+        activity: {
+          ...event,
+          start: event.start,
+          end: event.end,
+        },
+      });
+    },
+    [navigation]
+  );
+
+  const handleLongPress = useCallback((event) => {
     setSelectedEvent(event);
     setModalVisible(true);
-  };
+  }, []);
 
-  const handlePress = () => {
+  const handlePressModal = useCallback(() => {
     if (selectedEvent) {
-      navigation.navigate("Activity", { activity: selectedEvent });
+      navigation.navigate("Activity", {
+        activity: {
+          ...selectedEvent,
+          start: selectedEvent.start,
+          end: selectedEvent.end,
+        },
+      });
       closeModal(); // Close the modal after navigating
     }
-  };
+  }, [navigation, selectedEvent]);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setModalVisible(false);
     setSelectedEvent(null);
-  };
+  }, []);
 
-  const handleDateChanged = (date) => {
-    const fromDate = new Date(date);
-    const toDate = new Date(date);
-    toDate.setDate(toDate.getDate() + 6); // Fetch events for the next 6 days (including the selected date)
+  const handleDateChanged = useCallback(
+    (date) => {
+      const fromDate = new Date(date);
+      const toDate = new Date(date);
+      toDate.setDate(toDate.getDate() + 6); // Fetch events for the next 6 days (including the selected date)
 
-    loadEventsForDateRange(fromDate, toDate);
-  };
+      loadEventsForDateRange(fromDate, toDate);
+    },
+    [loadEventsForDateRange]
+  );
+
+  const modalContent = useMemo(
+    () => (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={closeModal}
+      >
+        <TouchableWithoutFeedback onPress={closeModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity
+              style={styles.modalView}
+              onPress={handlePressModal}
+            >
+              {selectedEvent && (
+                <>
+                  <Text style={styles.modalTitle}>{selectedEvent.subtype}</Text>
+                  {selectedEvent.subtype === "Admin" ||
+                  selectedEvent.subtype === "Rental" ? (
+                    <Text style={styles.modalText}>
+                      PIC: {selectedEvent.pic}
+                    </Text>
+                  ) : selectedEvent.subtype === "Refresher" ? (
+                    <Text style={styles.modalText}>
+                      Student: {selectedEvent.s1}
+                    </Text>
+                  ) : (
+                    <>
+                      <Text style={styles.modalText}>
+                        Student 1: {selectedEvent.s1}
+                      </Text>
+                      <Text style={styles.modalText}>
+                        Student 2: {selectedEvent.s2}
+                      </Text>
+                    </>
+                  )}
+                  <Text style={styles.modalText}>
+                    Status: {selectedEvent.status}
+                  </Text>
+                  <Text style={styles.modalText}>{selectedEvent.summary}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    ),
+    [modalVisible, selectedEvent, closeModal, handlePressModal]
+  );
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
       <TimelineCalendar
-        viewMode="week"
+        viewMode="threeDays" //week //day
         events={events}
         isLoading={isLoading}
+        onPressEvent={handlePress}
         onLongPressEvent={handleLongPress}
         onDateChanged={handleDateChanged}
         theme={{ loadingBarColor: "#D61C4E" }}
       />
 
-      {selectedEvent && (
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={closeModal}
-        >
-          <TouchableWithoutFeedback onPress={closeModal}>
-            <View style={styles.modalOverlay}>
-              <TouchableOpacity style={styles.modalView} onPress={handlePress}>
-                <Text style={styles.modalTitle}>{selectedEvent.title}</Text>
-                <Text style={styles.modalText}>
-                  Start: {selectedEvent.start.toLocaleString()}
-                </Text>
-                <Text style={styles.modalText}>
-                  End: {selectedEvent.end.toLocaleString()}
-                </Text>
-                <Text style={styles.modalText}>ADD OTHER DETAILS</Text>
-                <Text style={styles.modalText}>{selectedEvent.summary}</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      )}
+      {modalContent}
     </View>
   );
 };

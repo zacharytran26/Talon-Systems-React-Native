@@ -1,42 +1,36 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, SafeAreaView, View } from "react-native";
-import {
-  Button,
-  ButtonGroup,
-  Icon,
-  Layout,
-  Text,
-  Avatar,
-} from "@ui-kitten/components";
-import { useRoute } from "@react-navigation/native";
+import { Button, ButtonGroup, Icon, Layout, Text } from "@ui-kitten/components";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { useAuth } from "./ThemeContext";
 
 const TrashIcon = (props) => <Icon {...props} name="trash-2-outline" />;
-
 const FolderIcon = (props) => <Icon {...props} name="folder-outline" />;
-
 const ReplyIcon = (props) => <Icon {...props} name="corner-up-left-outline" />;
 
 const EmailList = ({ navigation }) => {
   const route = useRoute();
   const { email } = route.params;
-  const { removeItem } = route.params || {};
+  const { authUser } = useAuth();
 
+  const [messages, setMessages] = useState([]);
+  const [deletedItems, setDeletedItems] = useState([]);
   useEffect(() => {
-    navigation.setOptions({
-      removeItem: () => {
-        navigation.navigate("MessagesScreen", {
-          removeItemId: email.id,
-        });
-      },
-    });
-  }, [navigation, email]);
+    setMessages([email]);
+  }, [email]);
 
-  const archiveEmails = async () => {
-    const querystring = `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=606327&customer=eta0000&mode=archivemessage&etamobilepro=1&nocache=n&persid=970&msgid=${email.id}`;
+  const removeItem = (id) => {
+    setMessages((prevMessages) =>
+      prevMessages.filter((message) => message.id !== id)
+    );
+    setDeletedItems((prevDeletedItems) => [...prevDeletedItems, id]);
+  };
+
+  const archiveEmails = async (id) => {
+    const querystring = `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=archivemessage&etamobilepro=1&nocache=n&persid=${authUser.currpersid}&msgid=${id}`;
     try {
       const response = await fetch(querystring);
       const data = await response.json();
-      console.log(data);
     } catch (error) {
       console.error("Error archiving email:", error);
     }
@@ -47,7 +41,7 @@ const EmailList = ({ navigation }) => {
       <SafeAreaView>
         <View style={styles.emailHeader}>
           <View style={styles.emailHeaderText}>
-            <Text category="s5">From:</Text>
+            <Text category="s1">From:</Text>
             <Text category="h3">{email.from}</Text>
             <Text appearance="hint">{email.date}</Text>
           </View>
@@ -65,16 +59,11 @@ const EmailList = ({ navigation }) => {
           <Button
             accessoryLeft={TrashIcon}
             onPress={() => {
-              if (removeItem) {
-                archiveEmails();
-                removeItem(email.id);
-                navigation.navigate("Message");
-              } else {
-                alert("No function passed");
-              }
+              archiveEmails(email.id);
+              removeItem(email.id);
+              navigation.goBack();
             }}
           />
-          <Button accessoryLeft={FolderIcon} />
           <Button
             accessoryLeft={ReplyIcon}
             onPress={() => navigation.navigate("ReplyScreen", { email: email })}
@@ -89,38 +78,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  backButton: {
-    marginRight: 8,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    height: 24,
-    fontSize: 12,
+    backgroundColor: "#F7F9FC",
   },
   emailHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    marginRight: 16,
-  },
   emailHeaderText: {
     flexDirection: "column",
-  },
-  date: {
-    marginVertical: 8,
-    fontWeight: "bold",
-  },
-  from: {
-    marginVertical: 8,
   },
   message: {
     marginVertical: 8,
@@ -139,6 +105,7 @@ const styles = StyleSheet.create({
   },
   buttonGroup: {
     margin: 2,
+    backgroundColor: "#b6daf2",
   },
 });
 

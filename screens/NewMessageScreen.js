@@ -41,7 +41,6 @@ const NewMessage = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch students
       const getStudentsResponse = await fetch(
         `${authUser.host}` +
           `content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=getstudents&etamobilepro=1&nocache=n&persid=${authUser.currpersid}`
@@ -49,7 +48,8 @@ const NewMessage = () => {
       const studentText = await getStudentsResponse.text();
       const studentData = JSON.parse(studentText);
 
-      // Fetch instructors
+      const students = studentData.studentdata[0].students;
+
       const getInstructorsResponse = await fetch(
         `${authUser.host}` +
           `content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=getinstructors&etamobilepro=1&nocache=n&persid=${authUser.currpersid}`
@@ -57,17 +57,21 @@ const NewMessage = () => {
       const instructorText = await getInstructorsResponse.text();
       const instructorData = JSON.parse(instructorText);
 
-      // Combine student and instructor data
-      const combinedData = [
-        ...studentData.map((student) => ({
-          key: student.persid,
-          value: student.name,
+      let combinedData = [
+        ...students.map((student) => ({
+          key: student.ID,
+          value: student.DISNAME,
         })),
-        ...instructorData.map((instructor) => ({
-          key: instructor.persid,
-          value: instructor.name,
+        ...instructorData.instructors.map((instructor) => ({
+          key: instructor.ID,
+          value: instructor.DISNAME,
         })),
       ];
+
+      // Filter out any objects where key or value is undefined
+      combinedData = combinedData.filter(
+        (item) => item.key !== undefined && item.value !== undefined
+      );
 
       setDropDown(combinedData);
     } catch (error) {
@@ -99,11 +103,9 @@ const NewMessage = () => {
       );
 
       const responseText = await response;
-      console.log("Raw response:", responseText);
     } catch (error) {
       console.error("Error sending message:", error);
     }
-    console.log("The pers id is:", selected);
   };
 
   return (
@@ -162,6 +164,7 @@ const NewMessage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F7F9FC",
   },
   safeArea: {
     flex: 1,
@@ -191,7 +194,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   dropdownStyles: {
-    maxHeight: 150, // Shortened dropdown menu
+    maxHeight: 150,
   },
 });
 

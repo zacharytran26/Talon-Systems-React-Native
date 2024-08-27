@@ -1,37 +1,58 @@
 import React from "react";
-import { StyleSheet, SafeAreaView, View, FlatList } from "react-native";
-import { Layout, Text, Button, Card } from "@ui-kitten/components";
+import { StyleSheet, SafeAreaView, View } from "react-native";
+import { Layout, Text, Card } from "@ui-kitten/components";
+import { useRoute } from "@react-navigation/native";
+import { FlashList } from "@shopify/flash-list";
 
-const Times = ({ route, navigation }) => {
+const Times = () => {
+  const route = useRoute();
   const { times } = route.params;
 
   const renderTimeItem = ({ item }) => (
-    <Card style={styles.card}>
-      <View style={styles.timeItem}>
-        <Text category="h6">Event Start: {item.eventstart}</Text>
-        <Text category="s1">Brief: {item.brief}</Text>
-        <Text category="s1">Activity Start: {item.activitystart}</Text>
-        <Text category="s1">Duration: {item.duration}</Text>
-        <Text category="s1">Activity Stop: {item.activitystop}</Text>
-        <Text category="s1">Debrief: {item.debrief}</Text>
-        <Text category="s1">Event Stop: {item.eventstop}</Text>
-      </View>
-    </Card>
+    <View style={styles.timeItemContainer}>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Event Start</Text>
+        <Text style={styles.cardContent}>{item.eventStart}</Text>
+      </Card>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Brief Duration</Text>
+        <Text style={styles.cardContent}>{item.briefDur}</Text>
+      </Card>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Activity Start</Text>
+        <Text style={styles.cardContent}>{item.actStart}</Text>
+      </Card>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Duration</Text>
+        <Text style={styles.cardContent}>{item.actDur}</Text>
+      </Card>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Activity Stop</Text>
+        <Text style={styles.cardContent}>{item.actStop}</Text>
+      </Card>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Debrief Duration</Text>
+        <Text style={styles.cardContent}>{item.debriefDur}</Text>
+      </Card>
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Event Stop</Text>
+        <Text style={styles.cardContent}>{item.eventStop}</Text>
+      </Card>
+    </View>
   );
 
   return (
     <Layout style={styles.container}>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.header}>
-          <Text category="h5" style={styles.title}>
-            Event Times
-          </Text>
+          <Text style={styles.title}>Event Times</Text>
         </View>
-        <FlatList
-          data={times}
+        <FlashList
+          data={[times]}
           renderItem={renderTimeItem}
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={styles.list}
+          estimatedItemSize={200}
         />
       </SafeAreaView>
     </Layout>
@@ -42,28 +63,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#f7f9fc",
+    backgroundColor: "#F7F9FC",
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: 16,
-  },
-  backButton: {
-    marginRight: 8,
+    alignItems: "center",
   },
   title: {
     fontWeight: "bold",
-    flex: 1,
-    textAlign: "center",
+    fontSize: 20,
+    color: "#2E3A59",
   },
   list: {
     paddingBottom: 16,
   },
+  timeItemContainer: {
+    marginBottom: 16,
+  },
   card: {
     marginVertical: 8,
     padding: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -71,8 +91,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  timeItem: {
-    padding: 16,
+  cardTitle: {
+    fontWeight: "600",
+    fontSize: 16,
+    color: "#8F9BB3",
+    marginBottom: 4,
+  },
+  cardContent: {
+    fontSize: 16,
+    color: "#2E3A59",
   },
 });
 

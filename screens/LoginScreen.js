@@ -1,18 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
   Alert,
-  ScrollView,
   TouchableOpacity,
+  Image,
+  Platform,
 } from "react-native";
 import { Input, Button, Layout, Text } from "@ui-kitten/components";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useAuth } from "./ThemeContext";
-//{"currpersid": 970, "geturl": "https://apps2.talonsystems.com/tseta/servlet/content?module=home&page=m&reactnative=1&accesscode=0200006733&customer=eta0000&etamobilepro=1&nocache=n"
-//, "sessionid": 606691, "validated": 1}
+
 const LoginScreen = ({ navigation }) => {
   const [accesscode, setAccesscode] = useState("");
   const [username, setUsername] = useState("");
@@ -22,9 +20,41 @@ const LoginScreen = ({ navigation }) => {
   const { setUrl, authUser, setAuthUser, isLoggedIn, setIsLoggedIn } =
     useAuth();
 
+  useEffect(() => {
+    loadAccessCode();
+  }, []);
+
+  const loadAccessCode = async () => {
+    try {
+      const savedAccessCode = await AsyncStorage.getItem("accesscode");
+      if (savedAccessCode !== null) {
+        setAccesscode(savedAccessCode);
+        fCheckAccessCode(savedAccessCode);
+      }
+    } catch (error) {
+      console.error("Failed to load access code", error);
+    }
+  };
+
+  const saveAccessCode = async (acode) => {
+    try {
+      await AsyncStorage.setItem("accesscode", acode);
+    } catch (error) {
+      console.error("Failed to save access code", error);
+    }
+  };
+
+  const saveUsername = async (user) => {
+    try {
+      await AsyncStorage.setItem("username", user);
+    } catch (error) {
+      console.error("Failed to save username", error);
+    }
+  };
+
   function fCheckAccessCode(acode) {
     var ucode = acode.toUpperCase();
-    if (ucode == "ERQ2013") {
+    if (ucode === "ERQ2013") {
       setLoginLabel("CONTINUE");
     } else {
       setLoginLabel("LOGIN");
@@ -33,26 +63,26 @@ const LoginScreen = ({ navigation }) => {
   }
 
   function fLogin() {
-    if (accesscode == "ERQ2013" && loginLabel == "CONTINUE") {
+    if (accesscode === "ERQ2013" && loginLabel === "CONTINUE") {
       navigation.navigate("LoginSSO");
     }
 
-    if (accesscode == "") {
+    if (accesscode === "") {
       Alert.alert("You must specify an Access Code.");
       return;
     }
-    if (username == "") {
-      Alert.alert("You must specify an User Name.");
+    if (username === "") {
+      Alert.alert("You must specify a User Name.");
       return;
     }
-    if (password == "") {
+    if (password === "") {
       Alert.alert("You must specify a Password.");
       return;
     }
 
     const conn = ""; //checkConnection();
 
-    if (conn == "No network connection" || conn == "Unknown connection") {
+    if (conn === "No network connection" || conn === "Unknown connection") {
       Alert.alert("You do not have an internet connection!");
     } else {
       const svr = accesscode.substring(0, 2).replace("0", ""); //remove leading zeros from the server: 02 becomes 2
@@ -60,70 +90,50 @@ const LoginScreen = ({ navigation }) => {
       const localAcode = accesscode;
 
       var schema = "";
-      //ERAU DEV
-      if (localAcode.substring(0, 3).toUpperCase() == "ERD") {
+      // ERAU DEV
+      if (localAcode.substring(0, 3).toUpperCase() === "ERD") {
         schema = "";
-        //ERAU QC
-      } else if (localAcode.substring(0, 3).toUpperCase() == "ERQ") {
+      } else if (localAcode.substring(0, 3).toUpperCase() === "ERQ") {
         schema = "";
-        //ERAU PROD
-      } else if (localAcode.substring(0, 3).toUpperCase() == "ERP") {
+      } else if (localAcode.substring(0, 3).toUpperCase() === "ERP") {
         schema = "";
-        //FALCON
-      } else if (localAcode.substring(0, 6).toUpperCase() == "TALDEV") {
+      } else if (localAcode.substring(0, 6).toUpperCase() === "TALDEV") {
         schema = "";
-        //EAGLE
-      } else if (localAcode.substring(0, 6).toUpperCase() == "TALTST") {
+      } else if (localAcode.substring(0, 6).toUpperCase() === "TALTST") {
         schema = "";
       } else {
-        //Talon Servers
         schema = localAcode.substring(2, 6);
       }
 
       if (
-        accesscode.substring(0, 1).toUpperCase() != "E" &&
+        accesscode.substring(0, 1).toUpperCase() !== "E" &&
         isNaN(accesscode)
       ) {
         Alert.alert(
           "You have entered an invalid access code. Only numeric characters are allowed."
         );
-
-        //not ERAU but invalid server portion of access code
       } else if (
-        accesscode.substring(0, 1).toUpperCase() != "E" &&
-        accesscode.substring(0, 2) != "01" &&
-        accesscode.substring(0, 2) != "02" &&
-        accesscode.substring(0, 2) != "03" &&
-        accesscode.substring(0, 2) != "04" &&
-        accesscode.substring(0, 2) != "05" &&
-        accesscode.substring(0, 2) != "06" &&
-        accesscode.substring(0, 2) != "07" &&
-        accesscode.substring(0, 2) != "08" &&
-        accesscode.substring(0, 2) != "09" &&
-        accesscode.substring(0, 2) != "10" &&
-        accesscode.substring(0, 2) != "11" &&
-        accesscode.substring(0, 2) != "12"
+        accesscode.substring(0, 1).toUpperCase() !== "E" &&
+        accesscode.substring(0, 2) !== "01" &&
+        accesscode.substring(0, 2) !== "02" &&
+        accesscode.substring(0, 2) !== "03" &&
+        accesscode.substring(0, 2) !== "04" &&
+        accesscode.substring(0, 2) !== "05" &&
+        accesscode.substring(0, 2) !== "06" &&
+        accesscode.substring(0, 2) !== "07" &&
+        accesscode.substring(0, 2) !== "08" &&
+        accesscode.substring(0, 2) !== "09" &&
+        accesscode.substring(0, 2) !== "10" &&
+        accesscode.substring(0, 2) !== "11" &&
+        accesscode.substring(0, 2) !== "12"
       ) {
         Alert.alert("You have entered an invalid access code.");
-
-        //not ERAU but access code not 10 chars
       } else if (
-        accesscode.substring(0, 1).toUpperCase() != "E" &&
-        accesscode.length != 10
+        accesscode.substring(0, 1).toUpperCase() !== "E" &&
+        accesscode.length !== 10
       ) {
         Alert.alert("You have entered an invalid access code.");
       } else {
-        var ssoLogin = 0;
-
-        var url = "";
-        var mode = "export";
-        var currentTime = new Date();
-        var n = currentTime.getTime() + Math.random();
-
-        var accessCode = accesscode;
-
-        var schema = accessCode.substring(2, 6);
-
         var url = talProd + "tseta/servlet/";
         var sHost = talProd + "tseta/servlet/";
 
@@ -147,10 +157,11 @@ const LoginScreen = ({ navigation }) => {
           .then((json) => {
             if (json.validated == "1") {
               json.host = sHost;
-              console.log(json);
               setAuthUser(json);
+              console.log(json);
               setIsLoggedIn(true);
-              //navigation.jumpTo('Home')
+              saveAccessCode(accesscode); // Save the access code on successful logins
+              saveUsername(username);
             } else {
               Alert.alert("You are not authorized to access ETA.");
               setIsLoggedIn(false);
@@ -179,6 +190,7 @@ const LoginScreen = ({ navigation }) => {
           value={accesscode}
           label="Access Code"
           placeholder="Enter your access code"
+          returnKeyType={Platform.OS === "ios" ? "done" : "next"}
           onChangeText={(text) => fCheckAccessCode(text)}
         />
         <Input
@@ -186,6 +198,7 @@ const LoginScreen = ({ navigation }) => {
           value={username}
           label="Username"
           placeholder="Enter your username"
+          returnKeyType={Platform.OS === "ios" ? "done" : "next"}
           onChangeText={(text) => setUsername(text)}
         />
         <Input
@@ -194,14 +207,15 @@ const LoginScreen = ({ navigation }) => {
           label="Password"
           placeholder="Enter your password"
           secureTextEntry={true}
+          returnKeyType={Platform.OS === "ios" ? "done" : "next"}
           onChangeText={(text) => setPassword(text)}
         />
-        <TouchableOpacity onPress={() => navigation.navigate("LoginSSO")}>
-          <Text>LoginSSO</Text>
-        </TouchableOpacity>
         <Button style={styles.button} onPress={() => fLogin()}>
-          Login
+          {loginLabel}
         </Button>
+        <TouchableOpacity onPress={() => navigation.navigate("LoginSSO")}>
+          <Text style={styles.sso}>SSOLOGIN</Text>
+        </TouchableOpacity>
       </Layout>
     </KeyboardAwareScrollView>
   );
@@ -213,6 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 30,
+    backgroundColor: "#F7F9FC",
   },
   image: {
     width: 300,
@@ -234,6 +249,12 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     width: "100%",
+    backgroundColor: "#b6daf2",
+    borderColor: "#b6daf2",
+  },
+  sso: {
+    marginTop: 8,
+    color: "#b6daf2",
   },
 });
 

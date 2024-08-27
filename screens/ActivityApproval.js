@@ -15,8 +15,8 @@ const useInputState = (initialValue = "") => {
   return { value, onChangeText: setValue, reset: () => setValue(initialValue) };
 };
 
-const Approve = ({ navigation, route }) => {
-  const { ids } = route.params;
+const ApproveActivity = ({ navigation, route }) => {
+  const { activity } = route.params();
   const hoursInputState = useInputState("");
   const commentInputState = useInputState("");
   const pinInputState = useInputState("");
@@ -34,7 +34,7 @@ const Approve = ({ navigation, route }) => {
     const pin = pinInputState.value;
 
     const response = await fetch(
-      `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=authrequest&etamobilepro=1&nocache=n&schactid=${ids.scheduleid}&requestid=${ids.requestid}&approval=${approved}&pinnum=${pin}&comment=${comment}&submittoscheduling=${submitToScheduling}&persid=${authUser.currpersid}`,
+      `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=authrequest&etamobilepro=1&nocache=n&schactid=${activity.scheduleid}&requestid=${activity.requestid}&approval=${approved}&pinnum=${pin}&comment=${comment}&submittoscheduling=${submitToScheduling}&persid=${authUser.currpersid}`,
       {
         method: "POST",
         headers: {
@@ -193,4 +193,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Approve;
+export default ApproveActivity;

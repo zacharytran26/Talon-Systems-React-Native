@@ -1,158 +1,186 @@
-import React, { useState, useEffect } from "react";
-import { StyleSheet, SafeAreaView, View, FlatList } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { StyleSheet, SafeAreaView, View } from "react-native";
 import { Layout, Text, Button, Card, Icon } from "@ui-kitten/components";
 import { SelectList } from "react-native-dropdown-select-list";
 import { Swipeable } from "react-native-gesture-handler";
 import { useAuth } from "./ThemeContext";
+import { FlashList } from "@shopify/flash-list";
 
 const TimeIcon = (props) => <Icon {...props} name="clock-outline" />;
-
 const ApproveIcon = (props) => (
   <Icon {...props} name="checkmark-circle-outline" />
 );
 
+const RenderAuth = React.memo(({ item, onPressTime, onPressAuth }) => (
+  <Swipeable
+    renderRightActions={() => (
+      <View style={styles.rightActionContainer}>
+        <Button
+          style={styles.actionButton}
+          appearance="ghost"
+          accessoryLeft={TimeIcon}
+          onPress={() => onPressTime(item)}
+        />
+        <Button
+          style={styles.actionButton}
+          appearance="ghost"
+          accessoryLeft={ApproveIcon}
+          onPress={() => onPressAuth(item)}
+        />
+      </View>
+    )}
+  >
+    <Card style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardHeaderText}>{item.value}</Text>
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.cardText}>
+          <Text style={styles.label}>Description:</Text> {item.AUTH_REASON}
+        </Text>
+        <Text style={styles.cardText}>
+          <Text style={styles.label}>Status:</Text> {item.STATUS_DISNAME}
+        </Text>
+        <Text style={styles.cardText}>
+          <Text style={styles.label}>Submission:</Text> {item.SUBMIT_DATE}
+        </Text>
+        <Text style={styles.cardText}>
+          <Text style={styles.label}>By:</Text> {item.BY}
+        </Text>
+        <Text style={styles.cardText}>
+          <Text style={styles.label}>Resource:</Text> {item.RES_TYPE}
+        </Text>
+        <Text style={styles.cardText}>
+          <Text style={styles.label}>Type:</Text> {item.REQST_TYPE_DISNAME}
+        </Text>
+      </View>
+    </Card>
+  </Swipeable>
+));
+
 const PendingAuth = ({ navigation }) => {
   const [requests, setRequests] = useState([]);
   const [filterByTeam, setFilterByTeam] = useState("");
+  const [teams, setTeams] = useState([]);
   const { authUser } = useAuth();
-
-  const fetchAuths = async () => {
-    try {
-      //const response = fetch(`${authUser.host}` + `content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=getpendingauthorization&etamobilepro=1&nocache=n&persid=${authUser.currpersid}`);
-      const response = await Promise.resolve({
-        AdminReq: [
-          {
-            id: 1,
-            title: "Admin Request 1.0 hours ",
-            description: "Admin Test request type needs authorization",
-            reqdate: "18 May 2024",
-            times: [
-              {
-                eventstart: "20:00",
-                brief: "0",
-                activitystart: "20:00",
-                duration: "1.0",
-                activitystop: "21:00",
-                debrief: "0",
-                eventstop: "21:00",
-              },
-            ],
-            reason: "IP Proficiency",
-            Status: "Pend Auth",
-            submission: "17 May 2024",
-            by: "Darumple, E",
-            resource: "C172SP",
-            team: "Flight A ",
-            type: "AdminReq",
-          },
-        ],
-        CourseReq: [
-          {
-            id: 2,
-            title: "Course Request 1.0 hours ",
-            description: "Course Test request type needs authorization",
-            reqdate: "19 May 2024",
-            times: [
-              {
-                eventstart: "20:00",
-                brief: "0",
-                activitystart: "20:00",
-                duration: "1.0",
-                activitystop: "21:00",
-                debrief: "0",
-                eventstop: "21:00",
-              },
-            ],
-            reason: "IP Proficiency",
-            Status: "Pend Auth",
-            submission: "12 May 2024",
-            by: "Darumple, E",
-            resource: "C172SPY",
-            team: "Flight B ",
-            type: "CourseReq",
-          },
-        ],
-      });
-      const combinedRequests = [...response.AdminReq, ...response.CourseReq];
-      setRequests(combinedRequests);
-    } catch (error) {
-      console.log(error);
-    }
-  };
 
   useEffect(() => {
     fetchAuths();
   }, []);
 
-  const handlePress = (times) => {
-    navigation.navigate("Times", { times });
+  const sanitizeJSON = (str) => {
+    return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
   };
 
-  const handlePressAuth = (request) => {
-    navigation.navigate("Auth", { request });
+  const fetchAuths = async () => {
+    try {
+      const response = await fetch(
+        `${authUser.host}content?module=home&page=m&reactnative=1&accesscode=0200006733&uname=duser&password=1234&session_id=${authUser.sessionid}&customer=eta0000&mode=getpendauth&etamobilepro=1&nocache=n&persid=${authUser.currpersid}`
+      );
+
+      const responseText = await response.text();
+      const sanitizedResponseText = sanitizeJSON(responseText);
+      const data = JSON.parse(sanitizedResponseText);
+
+      const pendAuthData = data.pendauthdata.reduce(
+        (acc, item) => {
+          if (item.pendauths) {
+            acc.pendauths = acc.pendauths.concat(
+              item.pendauths.map((pendauth) => ({
+                key: pendauth.ID,
+                value: pendauth.REQST_TYPE_DISNAME,
+                requestid: pendauth.ID,
+                eventStop: pendauth.EVENT_STOP,
+                eventStart: pendauth.EVENT_START,
+                hour: pendauth.HOUR,
+                debriefDur: pendauth.DEBRIEF_DUR,
+                briefDur: pendauth.BRIEF_DUR,
+                actDur: pendauth.ACT_DUR,
+                actStart: pendauth.ACT_START,
+                actStop: pendauth.ACT_STOP,
+                scheduleid: pendauth.SCH_ACT_ID,
+                ...pendauth,
+              }))
+            );
+          }
+          if (item.teams) {
+            acc.teams = acc.teams.concat(
+              item.teams.map((team) => ({
+                key: team.ID,
+                value: team.DIS,
+              }))
+            );
+          }
+          return acc;
+        },
+        { pendauths: [], teams: [] }
+      );
+
+      setRequests(pendAuthData.pendauths);
+      setTeams(pendAuthData.teams);
+    } catch (error) {
+      console.error("Error fetching and parsing data:", error);
+    }
   };
 
-  const RightActions = ({ item }) => (
-    <View style={styles.rightActionContainer}>
-      <Button
-        style={styles.actionButton}
-        appearance="ghost"
-        accessoryLeft={TimeIcon}
-        onPress={() => handlePress(item.times)}
-      />
-      <Button
-        style={styles.actionButton}
-        appearance="ghost"
-        accessoryLeft={ApproveIcon}
-        onPress={() => handlePressAuth(item)}
-      />
-    </View>
+  const handlePressTime = useCallback(
+    (item) => {
+      const times = {
+        eventStop: item.eventStop,
+        eventStart: item.eventStart,
+        hour: item.hour,
+        debriefDur: item.debriefDur,
+        briefDur: item.briefDur,
+        actDur: item.actDur,
+        actStart: item.actStart,
+        actStop: item.actStop,
+      };
+      navigation.navigate("Times", { times });
+    },
+    [navigation]
   );
 
-  const RenderAuth = ({ item }) => (
-    <Swipeable renderRightActions={() => RightActions({ item })}>
-      <Card
-        style={styles.card}
-        header={() => (
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardHeaderText}>{item.title}</Text>
-          </View>
-        )}
-      >
-        <Text>Description: {item.description}</Text>
-        <Text>Status: {item.Status}</Text>
-        <Text>Submission: {item.submission}</Text>
-        <Text>By: {item.by}</Text>
-        <Text>Resource: {item.resource}</Text>
-        <Text>Type: {item.type}</Text>
-      </Card>
-    </Swipeable>
+  const handlePressAuth = useCallback(
+    (item) => {
+      const ids = {
+        scheduleid: item.scheduleid,
+        requestid: item.requestid,
+      };
+      navigation.navigate("Auth", { ids });
+    },
+    [navigation]
   );
+
+  const handleTeamSelect = useCallback((value) => {
+    setFilterByTeam(value);
+  }, []);
 
   const filteredRequests = filterByTeam
-    ? requests.filter((request) => request.team === filterByTeam)
+    ? requests.filter((request) => request.teamId === filterByTeam)
     : requests;
 
   return (
     <Layout style={styles.container}>
-      <SafeAreaView>
+      <SafeAreaView style={styles.safeArea}>
         <SelectList
-          data={[
-            { key: "", value: "All Teams" },
-            ...Array.from(new Set(requests.map((request) => request.team))).map(
-              (team) => ({ key: team, value: team })
-            ),
-          ]}
-          setSelected={setFilterByTeam}
-          placeholder="Select a team"
+          data={[{ key: "", value: "All Teams" }, ...teams]}
+          setSelected={handleTeamSelect}
+          placeholder={filterByTeam || "Select a team"}
           boxStyles={styles.selectListBox}
           value={filterByTeam}
         />
-        <FlatList
+        <FlashList
           data={filteredRequests}
-          renderItem={RenderAuth}
-          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <RenderAuth
+              item={item}
+              onPressTime={handlePressTime}
+              onPressAuth={handlePressAuth}
+            />
+          )}
+          keyExtractor={(item) => item.key.toString()}
           contentContainerStyle={styles.list}
+          estimatedItemSize={100} // Adjust this value based on your item's average height
         />
       </SafeAreaView>
     </Layout>
@@ -162,19 +190,45 @@ const PendingAuth = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F7F9FC",
+  },
+  safeArea: {
+    flex: 1,
     padding: 16,
   },
   cardHeader: {
     padding: 8,
+    backgroundColor: "#b6daf2",
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
   },
   cardHeaderText: {
-    color: "#170101", // Text color
+    color: "#FFFFFF",
     fontWeight: "bold",
+    fontSize: 16,
+  },
+  cardBody: {
+    padding: 12,
+  },
+  cardText: {
+    fontSize: 16,
+    marginBottom: 4,
+    color: "#2E3A59",
+  },
+  label: {
+    fontWeight: "600",
+    color: "#8F9BB3",
   },
   selectListBox: {
     marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E4E9F2",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   list: {
     paddingBottom: 16,
@@ -182,13 +236,14 @@ const styles = StyleSheet.create({
   rightActionContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginRight: 16,
   },
   actionButton: {
     marginHorizontal: 5,
   },
   card: {
     marginVertical: 8,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
