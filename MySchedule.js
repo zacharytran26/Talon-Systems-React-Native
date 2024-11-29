@@ -20,16 +20,19 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import { useAuth } from "./ThemeContext";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { AgendaList } from "react-native-calendars";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 const LeftIcon = (evaProps) => <Icon {...evaProps} name="arrow-left" />;
 const RightIcon = (evaProps) => <Icon {...evaProps} name="arrow-right" />;
 
-const TimelineCalendarScreen = ({navigation}) => {
+const TimelineCalendarScreen = () => {
+  const navigation = useNavigation();
   const [filter, setFilter] = useState("");
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState(null);  
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [schedDate, setSchedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -62,20 +65,26 @@ const TimelineCalendarScreen = ({navigation}) => {
         jsonData = JSON.parse(jsonString);
       }
 
-      const fetchedActivities = jsonData.activities.map((item) => ({
-        id: item.id || Math.random().toString(36).slice(2, 10),
-        title: item.title,        
-        status:item.status,
-        acttype:item.activitytype,
-        actsubtype:item.subtype,
-        label:item.activitytype=='Flight'? 'Aircraft':(item.activitytype=='Sim'? 'Sim':'Resource'),
-        resource:item.resource==""? item.resourcetype:item.resource,
-        pic:item.pic,
-        s1:item.s1,
-        s2:item.s2
-      }));
+      // const fetchedActivities = (jsonData.activities || []).map((item) => ({
+      //   id: item.id || Math.random().toString(36).slice(2, 10),
+      //   title: item.title || "Untitled Activity",
+      //   status: item.status || "Unknown Status",
+      //   acttype: item.activitytype || "Unknown Type",
+      //   actsubtype: item.subtype || "Unknown Subtype",
+      //   label:
+      //     item.activitytype === "Flight"
+      //       ? "Aircraft"
+      //       : item.activitytype === "Sim"
+      //       ? "Sim"
+      //       : "Resource",
+      //   resource: item.resource || item.resourcetype || "Unknown Resource",
+      //   pic: item.pic || "No PIC",
+      //   s1: item.s1 || "No Student",
+      //   s2: item.s2 || "No Second Student",
+      // }));
 
-      setActivities(fetchedActivities);
+      console.log(jsonData);
+      setActivities(jsonData.activities);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -83,9 +92,11 @@ const TimelineCalendarScreen = ({navigation}) => {
     }
   }, [authUser, schedDate]);
 
-  useEffect(() => {
-    fetchCalData();
-  }, [fetchCalData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCalData();
+    }, [fetchCalData])
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -97,53 +108,91 @@ const TimelineCalendarScreen = ({navigation}) => {
     if (selectedDate) {
       setSchedDate(selectedDate);
     }
-    handleRefresh();            
+    handleRefresh();
   };
 
   const incrementDate = () => {
-    setSchedDate((prevDate) => new Date(prevDate.setDate(prevDate.getDate() + 1)));
+    setSchedDate(
+      (prevDate) => new Date(prevDate.setDate(prevDate.getDate() + 1))
+    );
     handleRefresh();
   };
 
   const decrementDate = () => {
-    setSchedDate((prevDate) => new Date(prevDate.setDate(prevDate.getDate() - 1)));
+    setSchedDate(
+      (prevDate) => new Date(prevDate.setDate(prevDate.getDate() - 1))
+    );
     handleRefresh();
   };
 
-  const openActivityDetails = () => {
-    props.navigation.navigate("HomeStack",{screen:"InstructorScreen"});
-  }
-  const RenderActivity = ({ item }) => {
+  const openActivityDetails = (activity) => {
+    navigation.navigate("HomeStack", {
+      screen: "Activity",
+      params: { activity },
+    });
+  };
+  const openStudentDetails = (detail) => {
+    navigation.navigate("HomeStack", {
+      screen: "StudentDetailScreen",
+      params: { detail },
+    });
+  };
+  const openInstructorDetails = (detail) => {
+    navigation.navigate("HomeStack", {
+      screen: "InstructorDetailScreen",
+      params: { detail },
+    });
+  };
 
+  const RenderActivity = ({ item }) => {
     return (
       <TouchableOpacity
+        onPress={() => openActivityDetails(item)}
         onLongPress={() => {
           setSelectedActivity(item);
           setPreviewVisible(true);
         }}
         activeOpacity={0.8}
+        style={styles.cardContainer}
       >
-        <Card style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardHeaderText}>{item.title}</Text>
-          </View>          
-          {item.actsubtype=='Rental'||item.actsubtype=='Admin'? 
-            <Text>PIC:{item.pic}</Text>
-            :
-            (<Text>Student:{item.s1}</Text>
-            )
-          }
-          {item.actsubtype=='Rental'||item.actsubtype=='Admin'? 
-            ''
-            :
-            (<Text>Instructor:{item.pic}</Text>
-            )
-          }
-          <Text style={styles.label}>Type: {item.acttype}({item.actsubtype})</Text>
-          <Text style={styles.label}>Status: {item.status}</Text>
-          
-          <Text style={styles.label}>{item.label}:{item.resource}</Text>                    
-        </Card>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardHeaderText}>{item.title}</Text>
+        </View>
+        <View style={styles.cardBody}>
+          {item.actsubtype === "Rental" || item.actsubtype === "Admin" ? (
+            <TouchableOpacity onPress={() => openInstructorDetails(item)}>
+              <Text style={styles.cardTextNav}>
+                <Text style={styles.label}>PIC:</Text> {item.pic}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity onPress={() => openStudentDetails(item.id)}>
+                <Text style={styles.cardTextNav}>
+                  <Text style={styles.label}>Student:</Text> {item.s1}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => openInstructorDetails(item.picid)}
+              >
+                <Text style={styles.cardTextNav}>
+                  <Text style={styles.label}>Instructor:</Text> {item.pic}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+          <Text style={styles.cardText}>
+            <Text style={styles.label}>Type:</Text> {item.activitytype}(
+            {item.subtype})
+          </Text>
+          <Text style={styles.cardText}>
+            <Text style={styles.label}>Status:</Text> {item.status}
+          </Text>
+          <Text style={styles.cardText}>
+            {/* <Text style={styles.label}>{item.label}:</Text> {item.resource} */}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -171,7 +220,9 @@ const TimelineCalendarScreen = ({navigation}) => {
             onPress={() => setShowDatePicker(true)}
             style={styles.datepickerButton}
           >
-            <Text style={styles.datepickerText}>{schedDate.toDateString()}</Text>
+            <Text style={styles.datepickerText}>
+              {schedDate.toDateString()}
+            </Text>
           </TouchableOpacity>
           <Button
             onPress={incrementDate}
@@ -181,20 +232,24 @@ const TimelineCalendarScreen = ({navigation}) => {
           />
         </View>
         {showDatePicker && (
-          <DateTimePicker
-            value={schedDate}
-            mode="date"
-            display={Platform.OS === "ios" ? "inline" : "default"}
-            onChange={handleDateChange}
-          />
+          <View style={styles.datePickerWrapper}>
+            <DateTimePicker
+              value={schedDate}
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={handleDateChange}
+            />
+          </View>
         )}
         <View style={styles.flashListContainer}>
           <FlashList
-            data={activities.filter((activity) =>
-              activity.title.toLowerCase().includes(filter.toLowerCase())
+            data={activities}
+            renderItem={({ item }) => (
+              <RenderActivity item={item} navigation={navigation} />
             )}
-            renderItem={({ item }) => <RenderActivity item={item} />}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) =>
+              item.id ? item.id.toString() : Math.random().toString()
+            }
             refreshing={refreshing}
             onRefresh={handleRefresh}
             contentContainerStyle={styles.list}
@@ -213,13 +268,14 @@ const TimelineCalendarScreen = ({navigation}) => {
               <View style={styles.modalOverlay}>
                 <TouchableOpacity style={styles.modalView}>
                   <Text style={styles.modalText}>
-                    Title: {selectedActivity.title}
+                    Title: {selectedActivity?.title || "No Title"}
                   </Text>
                   <Text style={styles.modalText}>
-                    Description: {selectedActivity.description}
+                    Description:{" "}
+                    {selectedActivity?.description || "No Description"}
                   </Text>
                   <Text style={styles.modalText}>
-                    Time: {selectedActivity.time}
+                    Time: {selectedActivity?.time || "No Time"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -235,6 +291,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f7f9fc",
+  },
+  datePickerWrapper: {
+    justifyContent: "center", // Center vertically
+    alignItems: "center", // Center horizontally
   },
   rowContainer: {
     flexDirection: "row",
@@ -252,7 +312,6 @@ const styles = StyleSheet.create({
   datepickerText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2E3A59",
   },
   button: {
     paddingHorizontal: 8,
@@ -260,35 +319,46 @@ const styles = StyleSheet.create({
   flashListContainer: {
     flex: 1,
   },
-  card: {
-    marginBottom: 16,
+  cardContainer: {
+    margin: 10,
+    padding: 15,
     borderRadius: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#fff",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    shadowRadius: 4,
+    elevation: 5, // For Android shadow
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+    marginBottom: 10,
   },
   cardHeaderText: {
-    fontWeight: "bold",
-    color: "#2E3A59",
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  cardBody: {
+    flexDirection: "column",
   },
   cardText: {
+    marginVertical: 5,
     fontSize: 14,
-    color: "#2E3A59",
+    color: "#555",
+  },
+  cardTextNav: {
+    marginVertical: 5,
+    fontSize: 14,
+    color: "#3366FF",
   },
   label: {
-    fontWeight: "600",
-    color: "#8F9BB3",
+    fontWeight: "bold",
+    color: "#333",
   },
   list: {
     paddingBottom: 16,
